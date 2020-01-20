@@ -129,7 +129,7 @@ class Scan extends Component {
                             <Text numberOfLines={8} style={styles.descText}>{desccription}</Text>
 
                             <TouchableOpacity onPress={this.activeQR} style={styles.buttonTouchable}>
-                                <Text style={styles.buttonTextStyle}>Click to Scan !</Text>
+                                <Text style={styles.buttonTextStyle}>Escanear !</Text>
                             </TouchableOpacity>
 
                         </View>
@@ -177,17 +177,16 @@ class Scan extends Component {
                             ref={(node) => { this.scanner = node }}
                             onRead={this.onSuccess}
                             topContent={
-                                <Text style={styles.centerText}>
-                                    Go to <Text style={styles.textBold}>wikipedia.org/wiki/QR_code</Text> on your computer and scan the QR code to test.</Text>
+                                <Text></Text>
                             }
                             bottomContent={
                                 <View>
                                     <TouchableOpacity style={styles.buttonTouchable} onPress={() => this.scanner.reactivate()}>
-                                        <Text style={styles.buttonTextStyle}>OK. Got it!</Text>
+                                        <Text style={styles.buttonTextStyle}>Escanear!</Text>
                                     </TouchableOpacity>
 
                                     <TouchableOpacity style={styles.buttonTouchable} onPress={() => this.setState({ scan: false })}>
-                                        <Text style={styles.buttonTextStyle}>Stop Scan</Text>
+                                        <Text style={styles.buttonTextStyle}>Cancelar</Text>
                                     </TouchableOpacity>
                                 </View>
 
