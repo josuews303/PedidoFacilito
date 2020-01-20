@@ -1,6 +1,5 @@
 import React, { Component, Fragment } from 'react';
 import QRCodeScanner from 'react-native-qrcode-scanner';
-import { CheckBox } from 'react-native-elements';
 import styles from './scanStyle'
 import {
     TouchableOpacity,
@@ -22,7 +21,6 @@ class Scan extends Component {
             scan: false,
             ScanResult: false,
             result: null,
-            total:0,
             checkboxes: [{
                 id: 1,
                 title: 'one',
@@ -36,10 +34,12 @@ class Scan extends Component {
     }
 
     async componentDidMount() {
+        console.log("wea")
         await this.getMenu()
     }
 
     getMenu = async () => {
+        console.log("entro")
         fetch('https://proyectosoftware2restaurante.herokuapp.com/greetings', {
             method: 'GET',
             headers: {
@@ -96,7 +96,6 @@ class Scan extends Component {
         let changedCheckbox = this.state.checkboxes.find((cb) =>
             cb.id === id); changedCheckbox.checked = !changedCheckbox.checked;
         let chkboxes = this.state.checkboxes;
-        var sub = 0;
         for (let i = 0; i < chkboxes.length; i++) {
             if (chkboxes[i].id === id) {
                 chkboxes.splice(i, 1, changedCheckbox);
@@ -104,26 +103,15 @@ class Scan extends Component {
         };
         this.setState({ checkboxes: chkboxes, });
         console.log(this.state.checkboxes)
-        
-        for (let i = 0; i < this.state.checkboxes.length; i++){
-            if(this.state.checkboxes[i].checked){
-                sub=sub+this.state.checkboxes[i].price;
-            }
-            
-        }
-        this.setState({
-            total:sub
-        });
-        console.log(this.state.total)
     }
     render() {
         const { scan, ScanResult, result } = this.state
-        const desccription = 'Cada mesa tiene un código QR, a continuación se le pedirá escanearlo para poder ingresar al menú y realizar su pedido con mayor facilidad'
+        const desccription = 'QR code (abbreviated from Quick Response Code) is the trademark for a type of matrix barcode (or two-dimensional barcode) first designed in 1994 for the automotive industry in Japan. A barcode is a machine-readable optical label that contains information about the item to which it is attached. In practice, QR codes often contain data for a locator, identifier, or tracker that points to a website or application. A QR code uses four standardized encoding modes (numeric, alphanumeric, byte/binary, and kanji) to store data efficiently; extensions may also be used.'
         return (
             <View style={styles.scrollViewStyle}>
                 <Fragment>
                     <StatusBar barStyle="dark-content" />
-                    <Text style={styles.textTitle}>Bienvenido a Pedido Facilito!</Text>
+                    <Text style={styles.textTitle}>Welcome To React-Native QR Code Tutorial !</Text>
                     {!scan && !ScanResult &&
                         <View style={styles.cardView} >
                             <Text numberOfLines={8} style={styles.descText}>{desccription}</Text>
@@ -137,34 +125,36 @@ class Scan extends Component {
 
                     {ScanResult &&
                         <Fragment>
-                            <Text style={styles.textTitle1}> Todo listo!</Text>
+                            <Text style={styles.textTitle1}>Result !</Text>
                             <View style={ScanResult ? styles.scanCardView : styles.cardView}>
-                                <Text>Te encuentras en la mesa # : {result.data}</Text>
-                                <Text>Este es el menú del establecimiento</Text>
+                                <Text>Type : {result.type}</Text>
+                                <Text>Result : {result.data}</Text>
+                                <Text numberOfLines={1}>RawData: {result.rawData}</Text>
                                 {
                                     this.state.checkboxes.map((cb) => {
                                         return (
                                             <View>
-
+                        
                                                 <CheckBox
-
+                                                
                                                     key={cb.id}
-                                                    title={cb.message + " $" + cb.price}
+                                                    title={cb.message}
                                                     checked={cb.checked}
                                                     onPress={() => this.toggleCheckbox(cb.id)}
                                                 />
-
+                                                {
+                                                    cb.checked?
+                                                    <Text>true</Text>:
+                                                    <Text>false</Text>
+                                                }
                                             </View>
                                         )
-                                        
                                     })
-                                    
                                 }
-                                <Text>El costo total es: {this.state.total}</Text>
                                 <TouchableOpacity onPress={this.scanAgain} style={styles.buttonTouchable}>
-                                    <Text style={styles.buttonTextStyle}>Escanear nuevamente</Text>
+                                    <Text style={styles.buttonTextStyle}>Click to Scan again!</Text>
                                 </TouchableOpacity>
-                            
+
                             </View>
                         </Fragment>
                     }

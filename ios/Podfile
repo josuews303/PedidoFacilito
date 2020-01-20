@@ -28,6 +28,10 @@ target 'qrcode' do
   pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec'
 
 
+  pod 'RNPermissions', :path => '../node_modules/react-native-permissions'
+
+  pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
+
   target 'qrcodeTests' do
     inherit! :search_paths
     # Pods for testing
