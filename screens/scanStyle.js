@@ -21,7 +21,7 @@ const styles = {
         fontSize: 18,
         textAlign: 'center',
         padding: 16,
-        color: 'black'
+        color: 'white'
     },
     cardView: {
         width: deviceWidth - 32,

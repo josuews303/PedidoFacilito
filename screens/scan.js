@@ -7,9 +7,10 @@ import {
     Text,
     StatusBar,
     Linking,
-    View
+    View,
+    TextInput
 } from 'react-native';
-
+import { Rating } from 'react-native-elements';
 import {
     Header,
     Colors,
@@ -21,8 +22,10 @@ class Scan extends Component {
         this.state = {
             scan: false,
             ScanResult: false,
+            feedback: false,
             result: null,
-            total:0,
+            comentario:'500 caracteres máximo',
+            total: 0,
             checkboxes: [{
                 id: 1,
                 title: 'one',
@@ -37,6 +40,10 @@ class Scan extends Component {
 
     async componentDidMount() {
         await this.getMenu()
+    }
+
+    ratingCompleted(rating) {
+        console.log("Rating is: " + rating)
     }
 
     getMenu = async () => {
@@ -91,6 +98,12 @@ class Scan extends Component {
             ScanResult: false
         })
     }
+    feedService = () => {
+        this.setState({
+            ScanResult: false,
+            feedback: true
+        })
+    }
     toggleCheckbox(id) {
         console.log(id)
         let changedCheckbox = this.state.checkboxes.find((cb) =>
@@ -104,27 +117,27 @@ class Scan extends Component {
         };
         this.setState({ checkboxes: chkboxes, });
         console.log(this.state.checkboxes)
-        
-        for (let i = 0; i < this.state.checkboxes.length; i++){
-            if(this.state.checkboxes[i].checked){
-                sub=sub+this.state.checkboxes[i].price;
+
+        for (let i = 0; i < this.state.checkboxes.length; i++) {
+            if (this.state.checkboxes[i].checked) {
+                sub = sub + this.state.checkboxes[i].price;
             }
-            
+
         }
         this.setState({
-            total:sub
+            total: sub
         });
         console.log(this.state.total)
     }
     render() {
-        const { scan, ScanResult, result } = this.state
+        const { scan, ScanResult, result, feedback } = this.state
         const desccription = 'Cada mesa tiene un código QR, a continuación se le pedirá escanearlo para poder ingresar al menú y realizar su pedido con mayor facilidad'
         return (
             <View style={styles.scrollViewStyle}>
                 <Fragment>
                     <StatusBar barStyle="dark-content" />
                     <Text style={styles.textTitle}>Bienvenido a Pedido Facilito!</Text>
-                    {!scan && !ScanResult &&
+                    {!scan && !ScanResult && !feedback &&
                         <View style={styles.cardView} >
                             <Text numberOfLines={8} style={styles.descText}>{desccription}</Text>
 
@@ -156,15 +169,46 @@ class Scan extends Component {
 
                                             </View>
                                         )
-                                        
+
                                     })
-                                    
+
                                 }
                                 <Text>El costo total es: {this.state.total}</Text>
                                 <TouchableOpacity onPress={this.scanAgain} style={styles.buttonTouchable}>
                                     <Text style={styles.buttonTextStyle}>Escanear nuevamente</Text>
                                 </TouchableOpacity>
-                            
+                                <TouchableOpacity onPress={this.feedService} style={styles.buttonTouchable}>
+                                    <Text style={styles.buttonTextStyle}>Feedback</Text>
+                                </TouchableOpacity>
+
+                            </View>
+                        </Fragment>
+                    }
+
+
+                    {feedback &&
+                        <Fragment>
+                            <Text style={styles.textTitle1}> Por favor, califique su servicio. </Text>
+                            <View style={ScanResult ? styles.scanCardView : styles.cardView}>
+                                <Text>Otorga una calificación del 1 al 5 {result.data}</Text>
+                                <Rating
+                                    showRating
+                                    onFinishRating={this.ratingCompleted}
+                                    style={{ paddingVertical: 10 }}
+                                />
+                                <Text>Deja un comentario, Gracias</Text>
+                                <TextInput
+                                    style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
+                                    onChangeText={text =>(this.setState({
+                                        comentario:text
+                                    }))}
+                                    value={this.state.comentario}
+                                    maxLength={500}
+                                />
+                                <TouchableOpacity onPress={this.scanAgain} style={styles.buttonTouchable}>
+                                    <Text style={styles.buttonTextStyle}>Enviar Calificación</Text>
+                                </TouchableOpacity>
+
                             </View>
                         </Fragment>
                     }
