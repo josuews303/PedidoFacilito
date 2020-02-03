@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import QRCodeScanner from 'react-native-qrcode-scanner';
-import { CheckBox } from 'react-native-elements';
+import { CheckBox, List, ListItem } from 'react-native-elements';
 import styles from './scanStyle'
 import {
     TouchableOpacity,
@@ -8,7 +8,8 @@ import {
     StatusBar,
     Linking,
     View,
-    TextInput
+    TextInput,
+    FlatList
 } from 'react-native';
 import { Rating } from 'react-native-elements';
 import {
@@ -20,11 +21,15 @@ class Scan extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            pedidos: [],
             scan: false,
             ScanResult: false,
             feedback: false,
             result: null,
-            comentario:'500 caracteres máximo',
+            temp: [],
+            temp2: [],
+            comentario: '500 caracteres máximo',
+            indicaciones: '',
             total: 0,
             checkboxes: [{
                 id: 1,
@@ -39,7 +44,7 @@ class Scan extends Component {
     }
 
     async componentDidMount() {
-        await this.getMenu()
+        this.getMenu();
     }
 
     ratingCompleted(rating) {
@@ -47,7 +52,7 @@ class Scan extends Component {
     }
 
     getMenu = async () => {
-        fetch('https://proyectosoftware2restaurante.herokuapp.com/greetings', {
+        fetch('https://proyectosoftware2restaurante.herokuapp.com/obtenerMenu', {
             method: 'GET',
             headers: {
                 Accept: 'application/json'
@@ -58,12 +63,25 @@ class Scan extends Component {
                     checkboxes: responseJson
                 });
 
-                console.log('Menu', this.state.menu);
-            });
+                this.state.checkboxes.map((cb) => {
+                    this.state.temp.push(cb.platoList)
 
+                })
+                this.state.temp.map((pt) => {
+                    pt.map((w) => {
+                        this.state.temp2.push(w);
+                    });
+
+
+
+                })
+                console.log('Menu', this.state.checkboxes);
+                console.log('Temp', this.state.temp);
+                console.log('Temp2', this.state.temp2);
+            });
     }
 
-    onSuccess = (e) => {
+    onSuccess = async (e) => {
         const check = e.data.substring(0, 4);
         console.log('scanned data' + check);
         this.setState({
@@ -83,6 +101,7 @@ class Scan extends Component {
                 scan: false,
                 ScanResult: true
             })
+            await this.getMenu()
         }
 
     }
@@ -98,6 +117,37 @@ class Scan extends Component {
             ScanResult: false
         })
     }
+    pedir = () => {
+        this.state.checkboxes.map((pt) => {
+            pt.platoList.map((pp) => {
+                if (pp.checked) {
+                    var obj = {id:pp.id,descripcion:pp.descripcion};
+                    this.state.pedidos.push(obj);
+                }
+            })
+        })
+        console.log("platos:", this.state.pedidos);
+        console.log("total:", this.state.total);
+        console.log("mesa:", this.state.result.data);
+        console.log("comentarioPedido:", this.state.indicaciones);
+
+        fetch('http://proyectosoftware2restaurante.herokuapp.com/ingresarPedido', {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                mesa: this.state.result.data,
+                total: this.state.total,
+                platos: this.state.pedidos,
+                comentarioPedido:this.state.indicaciones
+            })
+        }).then((response) => response.json())
+            .then(responseJson => {
+                console.log('Server Response: ' + JSON.stringify(responseJson));
+            });
+    }
     feedService = () => {
         this.setState({
             ScanResult: false,
@@ -105,30 +155,51 @@ class Scan extends Component {
         })
     }
     toggleCheckbox(id) {
-        console.log(id)
-        let changedCheckbox = this.state.checkboxes.find((cb) =>
-            cb.id === id); changedCheckbox.checked = !changedCheckbox.checked;
+        console.log("touchedID", id)
+        let changeCHK = this.state.checkboxes;
+        changeCHK.map((pt) => {
+            pt.platoList.map((cc) => {
+                if (cc.id === id) {
+                    cc.checked = !cc.checked;
+                }
+            });
+        });
+        console.log("chk", changeCHK);
+
         let chkboxes = this.state.checkboxes;
         var sub = 0;
         for (let i = 0; i < chkboxes.length; i++) {
             if (chkboxes[i].id === id) {
-                chkboxes.splice(i, 1, changedCheckbox);
+                chkboxes.splice(i, 1, changeCHK);
             };
         };
         this.setState({ checkboxes: chkboxes, });
-        console.log(this.state.checkboxes)
+        console.log("changed", this.state.checkboxes)
 
-        for (let i = 0; i < this.state.checkboxes.length; i++) {
-            if (this.state.checkboxes[i].checked) {
-                sub = sub + this.state.checkboxes[i].price;
-            }
 
-        }
+        this.state.checkboxes.map((tt) => {
+            tt.platoList.map((st) => {
+                if (st.checked) {
+                    sub = sub + st.precio;
+                }
+            })
+        })
         this.setState({
             total: sub
         });
-        console.log(this.state.total)
+        console.log("total", this.state.total)
     }
+
+
+    renderRow({ item }) {
+        return (
+            <ListItem
+                title={item.descripcion}
+                subtitle={item.precio}
+            />
+        )
+    }
+
     render() {
         const { scan, ScanResult, result, feedback } = this.state
         const desccription = 'Cada mesa tiene un código QR, a continuación se le pedirá escanearlo para poder ingresar al menú y realizar su pedido con mayor facilidad'
@@ -156,17 +227,24 @@ class Scan extends Component {
                                 <Text>Este es el menú del establecimiento</Text>
                                 {
                                     this.state.checkboxes.map((cb) => {
+
                                         return (
                                             <View>
-
-                                                <CheckBox
-
-                                                    key={cb.id}
-                                                    title={cb.message + " $" + cb.price}
-                                                    checked={cb.checked}
-                                                    onPress={() => this.toggleCheckbox(cb.id)}
-                                                />
-
+                                                <Text>{cb.descripcionCategoria}</Text>
+                                                {
+                                                    cb.platoList.map((pt, i) => {
+                                                        return (
+                                                            <View>
+                                                                <CheckBox
+                                                                    key={pt.id}
+                                                                    title={pt.descripcion + " $" + pt.precio}
+                                                                    checked={pt.checked}
+                                                                    onPress={() => this.toggleCheckbox(pt.id)}
+                                                                />
+                                                            </View>
+                                                        )
+                                                    })
+                                                }
                                             </View>
                                         )
 
@@ -174,8 +252,17 @@ class Scan extends Component {
 
                                 }
                                 <Text>El costo total es: {this.state.total}</Text>
-                                <TouchableOpacity onPress={this.scanAgain} style={styles.buttonTouchable}>
-                                    <Text style={styles.buttonTextStyle}>Escanear nuevamente</Text>
+                                <Text>Si tiene indicaciones extra, por favor descríbalas aquí:</Text>
+                                <TextInput
+                                    style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
+                                    onChangeText={text => (this.setState({
+                                        indicaciones: text
+                                    }))}
+                                    value={this.state.indicaciones}
+                                    maxLength={500}
+                                />
+                                <TouchableOpacity onPress={this.pedir} style={styles.buttonTouchable}>
+                                    <Text style={styles.buttonTextStyle}>Pedir</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={this.feedService} style={styles.buttonTouchable}>
                                     <Text style={styles.buttonTextStyle}>Feedback</Text>
@@ -199,8 +286,8 @@ class Scan extends Component {
                                 <Text>Deja un comentario, Gracias</Text>
                                 <TextInput
                                     style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
-                                    onChangeText={text =>(this.setState({
-                                        comentario:text
+                                    onChangeText={text => (this.setState({
+                                        comentario: text
                                     }))}
                                     value={this.state.comentario}
                                     maxLength={500}
