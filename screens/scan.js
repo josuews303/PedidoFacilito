@@ -9,7 +9,8 @@ import {
     Linking,
     View,
     TextInput,
-    FlatList
+    Image,
+    SafeAreaView
 } from 'react-native';
 import { Rating } from 'react-native-elements';
 import {
@@ -22,13 +23,14 @@ class Scan extends Component {
         super(props);
         this.state = {
             pedidos: [],
+            msj: 'Bienvenido a Pedido Facilito!',
             scan: false,
             ScanResult: false,
             feedback: false,
             result: null,
             temp: [],
             temp2: [],
-            comentario: '500 caracteres máximo',
+            comentario: '',
             indicaciones: '',
             total: 0,
             checkboxes: [{
@@ -121,7 +123,7 @@ class Scan extends Component {
         this.state.checkboxes.map((pt) => {
             pt.platoList.map((pp) => {
                 if (pp.checked) {
-                    var obj = {id:pp.id,descripcion:pp.descripcion};
+                    var obj = { id: pp.id, descripcion: pp.descripcion };
                     this.state.pedidos.push(obj);
                 }
             })
@@ -141,17 +143,19 @@ class Scan extends Component {
                 mesa: this.state.result.data,
                 total: this.state.total,
                 platos: this.state.pedidos,
-                comentarioPedido:this.state.indicaciones
+                comentarioPedido: this.state.indicaciones
             })
         }).then((response) => response.json())
             .then(responseJson => {
                 console.log('Server Response: ' + JSON.stringify(responseJson));
             });
+        this.feedService()
     }
     feedService = () => {
         this.setState({
             ScanResult: false,
-            feedback: true
+            feedback: true,
+            msj: 'Tu pedido ha sido procesado, en un momento te atenderán!'
         })
     }
     toggleCheckbox(id) {
@@ -204,128 +208,135 @@ class Scan extends Component {
         const { scan, ScanResult, result, feedback } = this.state
         const desccription = 'Cada mesa tiene un código QR, a continuación se le pedirá escanearlo para poder ingresar al menú y realizar su pedido con mayor facilidad'
         return (
-            <View style={styles.scrollViewStyle}>
-                <Fragment>
-                    <StatusBar barStyle="dark-content" />
-                    <Text style={styles.textTitle}>Bienvenido a Pedido Facilito!</Text>
-                    {!scan && !ScanResult && !feedback &&
-                        <View style={styles.cardView} >
-                            <Text numberOfLines={8} style={styles.descText}>{desccription}</Text>
+            <SafeAreaView style={{ backgroundColor: '#99003d',flex:1,width:'100%',height:'100%' }}>
+                <View style={styles.scrollViewStyle}>
+                    <Fragment>
+                        <StatusBar backgroundColor="#99003d" barStyle="light-content" />
+                        <Text style={styles.textTitle}>{this.state.msj}</Text>
+                        {!scan && !ScanResult && !feedback &&
+                            <View style={styles.cardView} >
+                                <Text numberOfLines={8} style={styles.descText}>{desccription}</Text>
 
-                            <TouchableOpacity onPress={this.activeQR} style={styles.buttonTouchable}>
-                                <Text style={styles.buttonTextStyle}>Escanear !</Text>
-                            </TouchableOpacity>
-
-                        </View>
-                    }
-
-                    {ScanResult &&
-                        <Fragment>
-                            <Text style={styles.textTitle1}> Todo listo!</Text>
-                            <View style={ScanResult ? styles.scanCardView : styles.cardView}>
-                                <Text>Te encuentras en la mesa # : {result.data}</Text>
-                                <Text>Este es el menú del establecimiento</Text>
-                                {
-                                    this.state.checkboxes.map((cb) => {
-
-                                        return (
-                                            <View>
-                                                <Text>{cb.descripcionCategoria}</Text>
-                                                {
-                                                    cb.platoList.map((pt, i) => {
-                                                        return (
-                                                            <View>
-                                                                <CheckBox
-                                                                    key={pt.id}
-                                                                    title={pt.descripcion + " $" + pt.precio}
-                                                                    checked={pt.checked}
-                                                                    onPress={() => this.toggleCheckbox(pt.id)}
-                                                                />
-                                                            </View>
-                                                        )
-                                                    })
-                                                }
-                                            </View>
-                                        )
-
-                                    })
-
-                                }
-                                <Text>El costo total es: {this.state.total}</Text>
-                                <Text>Si tiene indicaciones extra, por favor descríbalas aquí:</Text>
-                                <TextInput
-                                    style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
-                                    onChangeText={text => (this.setState({
-                                        indicaciones: text
-                                    }))}
-                                    value={this.state.indicaciones}
-                                    maxLength={500}
-                                />
-                                <TouchableOpacity onPress={this.pedir} style={styles.buttonTouchable}>
-                                    <Text style={styles.buttonTextStyle}>Pedir</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={this.feedService} style={styles.buttonTouchable}>
-                                    <Text style={styles.buttonTextStyle}>Feedback</Text>
+                                <TouchableOpacity onPress={this.activeQR} style={styles.buttonTouchable}>
+                                    <Text style={styles.buttonTextStyle}>Escanear !</Text>
                                 </TouchableOpacity>
 
                             </View>
-                        </Fragment>
-                    }
+                        }
 
+                        {ScanResult &&
+                            <Fragment>
+                                <Text style={styles.textTitle1}> Todo listo!</Text>
+                                <View style={ScanResult ? styles.scanCardView : styles.cardView}>
+                                    <Text>Te encuentras en la mesa # : {result.data}</Text>
+                                    <Text>Este es el menú del establecimiento</Text>
+                                    {
+                                        this.state.checkboxes.map((cb) => {
 
-                    {feedback &&
-                        <Fragment>
-                            <Text style={styles.textTitle1}> Por favor, califique su servicio. </Text>
-                            <View style={ScanResult ? styles.scanCardView : styles.cardView}>
-                                <Text>Otorga una calificación del 1 al 5 {result.data}</Text>
-                                <Rating
-                                    showRating
-                                    onFinishRating={this.ratingCompleted}
-                                    style={{ paddingVertical: 10 }}
-                                />
-                                <Text>Deja un comentario, Gracias</Text>
-                                <TextInput
-                                    style={{ height: 40, borderColor: 'gray', borderWidth: 1 }}
-                                    onChangeText={text => (this.setState({
-                                        comentario: text
-                                    }))}
-                                    value={this.state.comentario}
-                                    maxLength={500}
-                                />
-                                <TouchableOpacity onPress={this.scanAgain} style={styles.buttonTouchable}>
-                                    <Text style={styles.buttonTextStyle}>Enviar Calificación</Text>
-                                </TouchableOpacity>
+                                            return (
+                                                <View style={{ width: '80%', marginTop: 2 }}>
+                                                    <Text style={{ fontWeight: 'bold' }}>{cb.descripcionCategoria}</Text>
+                                                    {
+                                                        cb.platoList.map((pt, i) => {
+                                                            return (
+                                                                <View>
+                                                                    <CheckBox
+                                                                        key={pt.id}
+                                                                        title={pt.descripcion + " $" + pt.precio}
+                                                                        checked={pt.checked}
+                                                                        onPress={() => this.toggleCheckbox(pt.id)}
+                                                                    />
+                                                                </View>
+                                                            )
+                                                        })
+                                                    }
+                                                </View>
+                                            )
 
-                            </View>
-                        </Fragment>
-                    }
+                                        })
 
-
-                    {scan &&
-                        <QRCodeScanner
-                            reactivate={true}
-                            showMarker={true}
-                            ref={(node) => { this.scanner = node }}
-                            onRead={this.onSuccess}
-                            topContent={
-                                <Text></Text>
-                            }
-                            bottomContent={
-                                <View>
-                                    <TouchableOpacity style={styles.buttonTouchable} onPress={() => this.scanner.reactivate()}>
-                                        <Text style={styles.buttonTextStyle}>Escanear!</Text>
+                                    }
+                                    <Text>El costo total es: {this.state.total}</Text>
+                                    <Text style={{ marginVertical: 2, width: '80%' }}>Si tiene indicaciones extra, por favor descríbalas aquí:</Text>
+                                    <TextInput
+                                        style={{ width: '80%', height: 40, borderColor: 'gray', borderWidth: 1 }}
+                                        onChangeText={text => (this.setState({
+                                            indicaciones: text
+                                        }))}
+                                        value={this.state.indicaciones}
+                                        maxLength={500}
+                                    />
+                                    <TouchableOpacity onPress={this.pedir} style={[styles.buttonTouchable]}>
+                                        <Text style={styles.buttonTextStyle}>Pedir</Text>
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity style={styles.buttonTouchable} onPress={() => this.setState({ scan: false })}>
-                                        <Text style={styles.buttonTextStyle}>Cancelar</Text>
-                                    </TouchableOpacity>
+
+                                </View>
+                            </Fragment>
+                        }
+
+
+                        {feedback &&
+                            <Fragment>
+                                <View style={{ width: '100%', justifyContent: 'center', alignItems: "center" }}>
+                                    <Image style={{ width: 180, height: 180, resizeMode: 'contain' }}
+                                        source={require('../img/check_verde.png')}
+                                    />
                                 </View>
 
-                            }
-                        />
-                    }
-                </Fragment>
-            </View>
+                                <Text style={styles.textTitle1}> Luego de ser atendido,por favor califique su experiencia. </Text>
+                                <View style={ScanResult ? styles.scanCardView : styles.cardView}>
+                                    <Text>Otorga una calificación del 1 al 5</Text>
+                                    <Rating
+                                        showRating
+                                        onFinishRating={this.ratingCompleted}
+                                        style={{ paddingVertical: 10 }}
+                                    />
+                                    <Text>Deja un comentario, Gracias</Text>
+                                    <TextInput
+                                        style={{ marginTop: 4, height: 60, borderColor: 'gray', borderWidth: 1, width: '70%' }}
+                                        onChangeText={text => (this.setState({
+                                            comentario: text
+                                        }))}
+                                        value={this.state.comentario}
+                                        maxLength={500}
+                                    />
+                                    <TouchableOpacity onPress={this.scanAgain} style={styles.buttonTouchable}>
+                                        <Text style={styles.buttonTextStyle}>Enviar Calificación</Text>
+                                    </TouchableOpacity>
+
+                                </View>
+                            </Fragment>
+                        }
+
+
+                        {scan &&
+                            <QRCodeScanner
+                                reactivate={true}
+                                showMarker={true}
+                                ref={(node) => { this.scanner = node }}
+                                onRead={this.onSuccess}
+                                topContent={
+                                    <Text></Text>
+                                }
+                                bottomContent={
+                                    <View>
+                                        <TouchableOpacity style={styles.buttonTouchable} onPress={() => this.scanner.reactivate()}>
+                                            <Text style={styles.buttonTextStyle}>Escanear!</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity style={styles.buttonTouchable} onPress={() => this.setState({ scan: false })}>
+                                            <Text style={styles.buttonTextStyle}>Cancelar</Text>
+                                        </TouchableOpacity>
+                                    </View>
+
+                                }
+                            />
+                        }
+                    </Fragment>
+                </View>
+
+            </SafeAreaView>
 
         );
     }
